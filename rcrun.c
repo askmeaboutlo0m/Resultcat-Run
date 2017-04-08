@@ -395,6 +395,17 @@ static void update(void)
         high_score = score;
     }
 
+    if (cat.grounded && !cat.walled) {
+        cat.run_frame = (cat.run_frame + 1) % RUN_FRAMES;
+    }
+    else {
+        cat.run_frame = 0;
+    }
+
+    if (whiteness > 0) {
+        whiteness -= 5;
+    }
+
     if (cat.x < KILLWALL || cat.y > KILLPLANE) {
         reset();
     }
@@ -425,13 +436,6 @@ static void render_cat(void)
 {
     SDL_Texture *tex;
     SDL_Rect     rect;
-
-    if (cat.grounded && !cat.walled) {
-        cat.run_frame = (cat.run_frame + 1) % RUN_FRAMES;
-    }
-    else {
-        cat.run_frame = 0;
-    }
 
     if (cat.grounded && cat.run_frame < RUN_FRAMES / 2) {
         tex = cat_ground;
@@ -479,7 +483,6 @@ static void render(void)
         SDL_SetRenderDrawColor(renderer, 0xff, 0xff, 0xff, whiteness);
         SDL_RenderFillRect(renderer, &rect);
 
-        whiteness -= 5;
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, 255);
     }
@@ -488,40 +491,35 @@ static void render(void)
 }
 
 
-static Uint32 on_frame(Uint32 interval, void *unused)
-{
-    SDL_Event event = {SDL_USEREVENT};
-    SDL_PushEvent(&event);
-    return interval;
-}
-
 static void run_game(void)
 {
-    SDL_Event   evt;
-    SDL_TimerID timer = SDL_AddTimer(FRAME_TIME, on_frame, NULL);
-
-    if (!timer) {
-        die("Timer Error", SDL_GetError());
-    }
+    Uint32 next = SDL_GetTicks();
 
     reset();
 
-    while (SDL_WaitEvent(&evt)) {
-        if (evt.type == SDL_QUIT) {
-            break;
-        }
-        else if (evt.type == SDL_KEYDOWN) {
-            if (evt.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-                break;
+    for (;;) {
+        SDL_Event evt;
+        Uint32    now;
+
+        while (SDL_PollEvent(&evt)) {
+            if (evt.type == SDL_QUIT) {
+                return;
+            }
+            else if (evt.type == SDL_KEYDOWN) {
+                if (evt.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+                    return;
+                }
             }
         }
-        else if (evt.type == SDL_USEREVENT) {
-            update();
-            render();
-        }
-    }
 
-    SDL_RemoveTimer(timer);
+        now = SDL_GetTicks();
+        while (SDL_TICKS_PASSED(now, next)) {
+            update();
+            next += FRAME_TIME;
+        }
+
+        render();
+    }
 }
 
 

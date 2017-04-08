@@ -52,10 +52,6 @@ The collision detection is different from the Flash version, because the way it
 works there is just too funky. The difference in gameplay is relatively minor
 though.
 
-The game uses a timer to keep its framerate. If your OS (read: old versions of
-Windows) has timers that don't time properly, the game will run a bit slower
-than 60 frames per second.
-
 
 LICENSE
 =======
