@@ -14,10 +14,12 @@ arrow to jump. The escape key quits the game.
 BUILDING
 ========
 
-You need a C compiler, [SDL 2](https://www.libsdl.org/),
+You need a C compiler that somewhat supports the C standard from 2011.
+
+You also need the [SDL 2](https://www.libsdl.org/),
 [SDL\_image 2](https://www.libsdl.org/projects/SDL_image/) and
-[SDL\_ttf 2](https://www.libsdl.org/projects/SDL_ttf/). They are usually
-available in your package manager, if your system has one of those.
+[SDL\_ttf 2](https://www.libsdl.org/projects/SDL_ttf/) libraries. They are
+usually available in your package manager, if your system has one of those.
 
 See the [Makefile](Makefile) for the incantation to compile the game with
 GCC-like compilers.

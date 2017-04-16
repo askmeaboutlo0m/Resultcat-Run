@@ -125,9 +125,7 @@ static SDL_Surface *load_surface(const char *path)
 
 static SDL_Texture *load_texture(SDL_Surface *sfc)
 {
-    SDL_Texture *tex;
-
-    tex = SDL_CreateTextureFromSurface(renderer, sfc);
+    SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, sfc);
     if (!tex) {
         die("Texture Error", SDL_GetError());
     }
@@ -138,15 +136,11 @@ static SDL_Texture *load_texture(SDL_Surface *sfc)
 
 static void load_levels(void)
 {
-    int  i;
+    for (int i = 0; i < MAX_LEVELS; ++i) {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "assets/level%d.png", i);
 
-    for (i = 0; i < MAX_LEVELS; ++i) {
-        char  buf[64];
-        FILE *fh;
-
-        sprintf(buf, "assets/level%d.png", i);
-        fh = fopen(buf, "r");
-
+        FILE *fh = fopen(buf, "r");
         if (fh) {
             fclose(fh);
             levels.sfcs[levels.len++] = load_surface(buf);
@@ -184,9 +178,7 @@ static void add_block(double x, double y)
 
 static SDL_Rect get_block_rect(struct Block *block)
 {
-    SDL_Rect rect = {0, 0, BLOCK_WIDTH, BLOCK_HEIGHT};
-    rect.x = block->x;
-    rect.y = block->y;
+    SDL_Rect rect = {block->x, block->y, BLOCK_WIDTH, BLOCK_HEIGHT};
     return rect;
 }
 
@@ -207,14 +199,12 @@ static int is_black(SDL_Surface *sfc, int x, int y)
 
 static void add_partial_level(void)
 {
-    int y;
-
     if (!loading || load_x >= loading->w) {
         loading = levels.sfcs[rand() % (levels.len - 1) + 1];
         load_x  = 0;
     }
 
-    for (y = 0; y < loading->h; ++y) {
+    for (int y = 0; y < loading->h; ++y) {
         if (is_black(loading, load_x, y)) {
             add_block(max_x, y * BLOCK_HEIGHT);
         }
@@ -228,13 +218,12 @@ static void add_partial_level(void)
 static void reset(void)
 {
     SDL_Surface *lvl = levels.sfcs[0];
-    int          x, y;
 
     blocks.start = 0;
     blocks.len   = 0;
 
-    for (x = 0; x < lvl->w; ++x) {
-        for (y = 0; y < lvl->h; ++y) {
+    for (int x = 0; x < lvl->w; ++x) {
+        for (int y = 0; y < lvl->h; ++y) {
             if (is_black(lvl, x, y)) {
                 add_block(x * BLOCK_WIDTH, y * BLOCK_HEIGHT);
             }
@@ -268,14 +257,14 @@ static int get_number_len(int n)
 
 static SDL_Texture *draw_text(int n, const char *suffix)
 {
-    char         fmt[64], buf[1024];
+    char fmt[64];
+    snprintf(fmt, sizeof(fmt), "%%0%dd %%s", get_number_len(high_score));
+
+    char buf[1024];
+    snprintf(buf, sizeof(buf), fmt, n, suffix);
+
     SDL_Color    white = {0xff, 0xff, 0xff};
-    SDL_Surface *sfc;
-
-    sprintf(fmt, "%%0%dd %%s", get_number_len(high_score));
-    sprintf(buf, fmt, n, suffix);
-
-    sfc = TTF_RenderUTF8_Blended(font, buf, white);
+    SDL_Surface *sfc   = TTF_RenderUTF8_Blended(font, buf, white);
     if (!sfc) {
         die("Text Render Error", TTF_GetError());
     }
@@ -303,9 +292,7 @@ static void update_jump(void)
 
 static void update_blocks(void)
 {
-    int i;
-
-    for (i = 0; i < blocks.len; ++i) {
+    for (int i = 0; i < blocks.len; ++i) {
         get_block(i)->x -= SPEED;
     }
 
@@ -315,14 +302,10 @@ static void update_blocks(void)
 
 static void update_check_walls(void)
 {
-    SDL_Point point;
-    int       i;
+    SDL_Point point = {cat.x + WALL_SPACE, cat.y + CAT_HEIGHT / 2.0};
+    cat.walled      = 0;
 
-    point.x    = cat.x + WALL_SPACE;
-    point.y    = cat.y + CAT_HEIGHT / 2.0;
-    cat.walled = 0;
-
-    for (i = 0; i < blocks.len; ++i) {
+    for (int i = 0; i < blocks.len; ++i) {
         SDL_Rect rect = get_block_rect(get_block(i));
 
         if (SDL_PointInRect(&point, &rect)) {
@@ -335,13 +318,9 @@ static void update_check_walls(void)
 
 static void update_check_floors(void)
 {
-    int      i;
-    SDL_Rect hitbox = {0, 51, 81, 20};
+    SDL_Rect hitbox = {cat.x, cat.y + 51, 81, 20};
 
-    hitbox.x += cat.x;
-    hitbox.y += cat.y;
-
-    for (i = 0; i < blocks.len; ++i) {
+    for (int i = 0; i < blocks.len; ++i) {
         SDL_Rect rect = get_block_rect(get_block(i));
 
         if (SDL_HasIntersection(&hitbox, &rect))  {
@@ -356,13 +335,9 @@ static void update_check_floors(void)
 
 static void update_check_ceilings(void)
 {
-    int      i;
-    SDL_Rect hitbox = {0, 10, 76, 20};
+    SDL_Rect hitbox = {cat.x, cat.y + 10, 76, 20};
 
-    hitbox.x += cat.x;
-    hitbox.y += cat.y;
-
-    for (i = 0; i < blocks.len; ++i) {
+    for (int i = 0; i < blocks.len; ++i) {
         SDL_Rect rect = get_block_rect(get_block(i));
 
         if (SDL_HasIntersection(&hitbox, &rect))  {
@@ -419,15 +394,10 @@ static void update(void)
 
 static void render_level(void)
 {
-    int i;
-
-    for (i = 0; i < blocks.len; ++i) {
+    for (int i = 0; i < blocks.len; ++i) {
         struct Block *block = get_block(i);
-        SDL_Rect      rect  = {0, 0, BLOCK_WIDTH + 1, BLOCK_HEIGHT + 1};
-
-        rect.x = block->x;
-        rect.y = block->y;
-
+        SDL_Rect      rect  = {block->x,        block->y,
+                               BLOCK_WIDTH + 1, BLOCK_HEIGHT + 1};
         R(SDL_RenderCopy(renderer, grayness, &rect, &rect));
     }
 }
@@ -435,7 +405,6 @@ static void render_level(void)
 static void render_cat(void)
 {
     SDL_Texture *tex;
-    SDL_Rect     rect;
 
     if (cat.grounded && cat.run_frame < RUN_FRAMES / 2) {
         tex = cat_ground;
@@ -444,8 +413,7 @@ static void render_cat(void)
         tex = cat_air;
     }
 
-    rect.x = cat.x;
-    rect.y = cat.y;
+    SDL_Rect rect = {cat.x, cat.y};
     R(SDL_QueryTexture(tex, NULL, NULL, &rect.w, &rect.h));
 
     R(SDL_RenderCopyEx(renderer, tex, NULL, &rect, cat.vel,
@@ -454,10 +422,7 @@ static void render_cat(void)
 
 static void render_text(SDL_Texture *tex, int x, int y)
 {
-    SDL_Rect rect;
-
-    rect.x = x;
-    rect.y = y;
+    SDL_Rect rect = {x, y};
     R(SDL_QueryTexture(tex, NULL, NULL, &rect.w, &rect.h));
 
     R(SDL_RenderCopy(renderer, tex, NULL, &rect));
@@ -499,8 +464,6 @@ static void run_game(void)
 
     for (;;) {
         SDL_Event evt;
-        Uint32    now;
-
         while (SDL_PollEvent(&evt)) {
             if (evt.type == SDL_QUIT) {
                 return;
@@ -512,7 +475,7 @@ static void run_game(void)
             }
         }
 
-        now = SDL_GetTicks();
+        Uint32 now = SDL_GetTicks();
         while (SDL_TICKS_PASSED(now, next)) {
             update();
             next += FRAME_TIME;
